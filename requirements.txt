@@ -1,0 +1,14 @@
+# Python for GenAI - Module 01-05
+# Tested with Python 3.11+ (book recommends 3.12, but 3.11 works fine here).
+#
+# Install everything with:
+#   pip install -r requirements.txt
+#
+# Everything else used across Module 01-05 (abc, asyncio, collections,
+# csv, dataclasses, functools, json, math, os, pathlib, string, threading,
+# time, typing) is part of the Python standard library - no install needed.
+
+numpy==2.4.6            # Module 05 - arrays, cosine similarity
+pandas==3.0.5           # Module 05 - DataFrames, groupby, mini project
+httpx==0.28.1           # Module 04 - async HTTP requests
+python-dotenv==1.2.2    # Module 04 - loading API keys from .env

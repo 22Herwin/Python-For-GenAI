@@ -1,0 +1,27 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python bytecode / cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets - never commit real API keys (template stays: .env.example)
+.env
+!.env.example
+
+# Generated output from running the demo/exercise scripts.
+# These are fully reproducible by re-running the corresponding .py file,
+# so they don't need to live in version control.
+Module04_FileIO_APIs/data/
+Module05_PythonForData/benchmark_scores.csv
+Module05_PythonForData/eval_results.csv
+Module05_PythonForData/sample_texts/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
