@@ -1,12 +1,12 @@
-# Python for GenAI — Workshop Modul 01–05
+# Python for GenAI - Workshop Modul 01 - 05
 
 - **Nama:** Herwin Dermawan
 - **NRP:** 5323600022
 - **Tanggal:** 16/09/2026
 
-Repository ini berisi jawaban tugas **Workshop Modul 01–05 Python Gen-AI**: kode latihan Python untuk persiapan pengembangan aplikasi Generative AI, mengikuti materi Phase 1 — Python Core for AI dari panduan *Python for GenAI Complete Guide*.
+Repository ini berisi jawaban tugas **Workshop Modul 01 - 05 Python Generative AI**: kode latihan Python untuk persiapan pengembangan aplikasi Generative AI, mengikuti materi Phase 1 - Python Core for AI dari panduan *Python for GenAI Complete Guide*.
 
-Setiap module sudah dikerjakan lengkap — kode contoh materi + soal latihan (exercises) beserta solusinya — dan sudah diuji jalan tanpa error.
+Setiap module sudah dikerjakan lengkap - kode contoh materi + soal latihan (exercises) beserta solusinya - dan sudah diuji jalan tanpa error.
 
 ## Setup
 
@@ -24,7 +24,7 @@ source .venv/bin/activate     # macOS/Linux
 pip install -r requirements.txt
 ```
 
-> Module 01, 02, dan 03 tidak butuh dependency tambahan (murni Python standard library). Hanya Module 04 (`httpx`, `python-dotenv`) dan Module 05 (`numpy`, `pandas`) yang butuh package eksternal — semuanya ada di `requirements.txt`.
+> Module 01, 02, dan 03 tidak butuh dependency tambahan (murni Python standard library). Hanya Module 04 (`httpx`, `python-dotenv`) dan Module 05 (`numpy`, `pandas`) yang butuh package eksternal - semuanya ada di `requirements.txt`.
 
 ## Menjalankan Kode
 
