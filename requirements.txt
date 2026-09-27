@@ -1,14 +1,21 @@
-# Python for GenAI - Module 01-05
+# Python for GenAI - Module 01-08
 # Tested with Python 3.11+ (book recommends 3.12, but 3.11 works fine here).
 #
 # Install everything with:
 #   pip install -r requirements.txt
 #
-# Everything else used across Module 01-05 (abc, asyncio, collections,
-# csv, dataclasses, functools, json, math, os, pathlib, string, threading,
-# time, typing) is part of the Python standard library - no install needed.
+# Everything else used across Module 01-08 (abc, asyncio, collections,
+# csv, dataclasses, functools, hashlib, importlib, json, math, os, pathlib,
+# re, sqlite3, string, threading, time, typing) is part of the Python
+# standard library - no install needed.
 
-numpy==2.4.6            # Module 05 - arrays, cosine similarity
-pandas==3.0.5           # Module 05 - DataFrames, groupby, mini project
-httpx==0.28.1           # Module 04 - async HTTP requests
-python-dotenv==1.2.2    # Module 04 - loading API keys from .env
+numpy==2.4.6            # Module 05, 08 - arrays, cosine similarity, embeddings
+pandas==3.0.5            # Module 05 - DataFrames, groupby, mini project
+httpx==0.28.1            # Module 04 - async HTTP requests
+python-dotenv==1.2.2     # Module 04, 06, 07, 08 - loading API keys from .env
+anthropic==1.8.0         # Module 06, 07, 08 - Claude API (chat, tools, vision, embeddings-adjacent)
+openai==3.19.0           # Module 06, 07, 08 - OpenAI API (chat, tools, embeddings, JSON mode)
+
+# Optional - only needed if you use Voyage AI embeddings instead of OpenAI's
+# (mentioned as an alternative in Module 08, not required to run any file):
+# voyageai

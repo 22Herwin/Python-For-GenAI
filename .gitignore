@@ -19,6 +19,10 @@ Module04_FileIO_APIs/data/
 Module05_PythonForData/benchmark_scores.csv
 Module05_PythonForData/eval_results.csv
 Module05_PythonForData/sample_texts/
+Module06_LLM_APIs/data/
+Module06_LLM_APIs/stream_output.txt
+Module07_PromptEngineering/data/
+Module08_Embeddings_SemanticSearch/data/
 
 # OS / editor noise
 .DS_Store

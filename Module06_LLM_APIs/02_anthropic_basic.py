@@ -1,0 +1,37 @@
+# Module 06 - OpenAI & Anthropic APIs
+# 6.2 The Anthropic SDK - Basic message call
+#
+# NOTE: This script makes a REAL, billed API call to Anthropic. It requires a
+# valid ANTHROPIC_API_KEY in a .env file in this folder to run.
+
+import anthropic
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def basic_call() -> None:
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=1024,
+        messages=[
+            {"role": "user", "content": "What is retrieval-augmented generation?"}
+        ],
+    )
+
+    # Response text is in the first content block
+    print(message.content[0].text)
+
+    # Usage stats
+    print(f"Input tokens: {message.usage.input_tokens}")
+    print(f"Output tokens: {message.usage.output_tokens}")
+
+
+if __name__ == "__main__":
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+    else:
+        basic_call()
