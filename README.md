@@ -1,4 +1,4 @@
-# Python for GenAI - Workshop Modul 01–05
+# Python for GenAI
 
 - **Nama:** Herwin Dermawan
 - **NRP:** 5323600022
