@@ -2,24 +2,25 @@
 # 6.5 Vision - Images as Input
 # Both APIs accept images alongside text in the same message.
 #
-# NOTE: This script makes REAL, billed API calls to Anthropic. It requires a
-# valid ANTHROPIC_API_KEY in a .env file in this folder to run.
+# NOTE: This script makes a REAL, billed API call to Anthropic. It requires a
+# valid ANTHROPIC_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY in a .env
+# file in this folder to run.
 
-import anthropic
-import os
 import base64
 from pathlib import Path
 from dotenv import load_dotenv
 
+from _openrouter_client import get_anthropic_client, MODEL
+
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"]) if os.getenv("ANTHROPIC_API_KEY") else None
+client = get_anthropic_client()
 
 
 # Option A: URL (fastest)
 def describe_image_url(url: str) -> str:
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model=MODEL,
         max_tokens=512,
         messages=[{
             "role": "user",
@@ -40,7 +41,7 @@ def describe_image_file(path: str) -> str:
     media_type = f"image/{ext}"  # image/png, image/jpeg, image/webp, image/gif
 
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model=MODEL,
         max_tokens=512,
         messages=[{
             "role": "user",
@@ -58,10 +59,11 @@ def describe_image_file(path: str) -> str:
 
 if __name__ == "__main__":
     if client is None:
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
+        # Some gateways (e.g. a local OmniRoute proxy) can't reach every host -
+        # this URL is confirmed reachable from all three provider paths.
         text = describe_image_url(
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/"
-            "Sunrise_over_the_sea.jpg/1280px-Sunrise_over_the_sea.jpg"
+            "https://raw.githubusercontent.com/python-pillow/Pillow/main/Tests/images/hopper.jpg"
         )
         print(text)

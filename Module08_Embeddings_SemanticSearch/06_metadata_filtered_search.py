@@ -11,13 +11,13 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 import numpy as np
-from openai import OpenAI
-import os
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, EMBEDDING_MODEL
 
 load_dotenv()
 
-openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"]) if os.getenv("OPENAI_API_KEY") else None
+openai_client = get_openai_client()
 
 
 @dataclass
@@ -29,7 +29,7 @@ class FilteredDocument:
 
 
 def embed_texts(texts: list[str]) -> np.ndarray:
-    resp = openai_client.embeddings.create(input=texts, model="text-embedding-3-small")
+    resp = openai_client.embeddings.create(input=texts, model=EMBEDDING_MODEL)
     vecs = np.array([e.embedding for e in sorted(resp.data, key=lambda x: x.index)], dtype=np.float32)
     norms = np.linalg.norm(vecs, axis=1, keepdims=True)
     return vecs / np.where(norms == 0, 1, norms)
@@ -82,7 +82,7 @@ DOCS = [
 
 if __name__ == "__main__":
     if openai_client is None:
-        print("OPENAI_API_KEY is not set. Add it to a .env file in this folder.")
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         fstore = FilteredVectorStore()
         fstore.add(DOCS)

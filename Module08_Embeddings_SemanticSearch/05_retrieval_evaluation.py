@@ -9,12 +9,13 @@
 # gated behind an OPENAI_API_KEY check.
 
 import importlib.util
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from dotenv import load_dotenv
+
+from _openrouter_client import has_openai_access
 
 load_dotenv()
 
@@ -87,8 +88,8 @@ if __name__ == "__main__":
     print("MRR:        ", mean_reciprocal_rank(mock_retrieved, mock_relevant))
 
     print("\n=== evaluate_retrieval() against a real VectorStore (needs OPENAI_API_KEY) ===")
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Skipped - OPENAI_API_KEY not set.")
+    if not has_openai_access():
+        print("Skipped - no OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY set.")
     else:
         vs_module = _load_vector_store_module()
         store = vs_module.VectorStore()

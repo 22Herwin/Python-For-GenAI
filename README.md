@@ -1,12 +1,14 @@
-# Python for GenAI — Workshop Modul 01–05
+# Python for GenAI - Workshop Modul 01–05
 
 - **Nama:** Herwin Dermawan
 - **NRP:** 5323600022
 - **Tanggal:** 16/09/2026
 
-Repository ini berisi jawaban tugas **Workshop Modul 01–05 Python Gen-AI**: kode latihan Python untuk persiapan pengembangan aplikasi Generative AI, mengikuti materi Phase 1 — Python Core for AI dari panduan *Python for GenAI Complete Guide*.
+Repository ini berisi jawaban tugas **Workshop Modul 01–05 Python Gen-AI**: kode latihan Python untuk persiapan pengembangan aplikasi Generative AI, mengikuti materi Phase 1 - Python Core for AI dari panduan *Python for GenAI Complete Guide*.
 
 Setiap module sudah dikerjakan lengkap - kode contoh materi + soal latihan (exercises) beserta solusinya - dan sudah diuji jalan tanpa error.
+
+Selain itu, repository ini juga menyertakan pengerjaan **Phase 2 - LLM APIs & Prompting (Module 06-08)** sebagai pengembangan lanjutan: Module 06 (Anthropic & OpenAI API), Module 07 (Prompt Engineering), dan Module 08 (Embeddings & Semantic Search).
 
 ## Setup
 

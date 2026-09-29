@@ -4,18 +4,18 @@
 # NOTE: This script makes a REAL, billed API call to OpenAI. It requires a
 # valid OPENAI_API_KEY in a .env file in this folder to run.
 
-from openai import OpenAI
-import os
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, has_openai_access, OPENAI_MODEL
 
 load_dotenv()
 
 
 def stream_response() -> None:
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = get_openai_client()
 
     stream = client.chat.completions.create(
-        model="gpt-4o",
+        model=OPENAI_MODEL,
         max_tokens=512,
         stream=True,
         messages=[{"role": "user", "content": "Explain embeddings in 3 bullet points."}],
@@ -30,7 +30,7 @@ def stream_response() -> None:
 
 
 if __name__ == "__main__":
-    if not os.getenv("OPENAI_API_KEY"):
-        print("OPENAI_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_openai_access():
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         stream_response()

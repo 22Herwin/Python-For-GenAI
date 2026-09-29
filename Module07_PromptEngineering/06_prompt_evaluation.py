@@ -6,11 +6,11 @@
 # NOTE: evaluate_prompt() makes one REAL, billed API call per test case. It
 # requires a valid ANTHROPIC_API_KEY in a .env file in this folder to run.
 
-import anthropic
-import os
 import json
 from dataclasses import dataclass
 from dotenv import load_dotenv
+
+from _openrouter_client import get_anthropic_client, has_anthropic_access, MODEL
 
 load_dotenv()
 
@@ -24,12 +24,12 @@ class EvalCase:
 
 def evaluate_prompt(system: str, cases: list[EvalCase], client=None) -> dict:
     """Run a prompt against test cases and return pass rate + details."""
-    client = client or anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = client or get_anthropic_client()
     results = []
 
     for case in cases:
         resp = client.messages.create(
-            model="claude-sonnet-4-5",
+            model=MODEL,
             max_tokens=256,
             system=system,
             messages=[{"role": "user", "content": case.input_text}],
@@ -72,8 +72,8 @@ TEST_CASES = [
 
 
 if __name__ == "__main__":
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_anthropic_access():
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         report = evaluate_prompt(CLASSIFY_SYSTEM, TEST_CASES)
         print(f"Pass rate: {report['pass_rate']:.0%}")

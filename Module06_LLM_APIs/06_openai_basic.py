@@ -5,18 +5,18 @@
 # NOTE: This script makes a REAL, billed API call to OpenAI. It requires a
 # valid OPENAI_API_KEY in a .env file in this folder to run.
 
-from openai import OpenAI
-import os
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, has_openai_access, OPENAI_MODEL
 
 load_dotenv()
 
 
 def basic_call() -> None:
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = get_openai_client()
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model=OPENAI_MODEL,
         max_tokens=1024,
         messages=[
             {"role": "system", "content": "You are a concise technical assistant."},
@@ -29,7 +29,7 @@ def basic_call() -> None:
 
 
 if __name__ == "__main__":
-    if not os.getenv("OPENAI_API_KEY"):
-        print("OPENAI_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_openai_access():
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         basic_call()

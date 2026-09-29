@@ -15,6 +15,8 @@ import anthropic
 import httpx
 from dotenv import load_dotenv
 
+from _openrouter_client import get_anthropic_client, has_anthropic_access, MODEL
+
 load_dotenv()
 
 
@@ -148,8 +150,8 @@ async def compare_models(prompt: str, models: list[str]):
 # Write a stream_to_file(prompt, output_path) function using the Anthropic
 # streaming API that writes tokens to a file in real time as they arrive.
 
-def stream_to_file(prompt: str, output_path: str, model: str = "claude-sonnet-4-5") -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+def stream_to_file(prompt: str, output_path: str, model: str = MODEL) -> None:
+    client = get_anthropic_client()
     with open(output_path, "w", encoding="utf-8") as f:
         with client.messages.stream(
             model=model,
@@ -184,9 +186,9 @@ if __name__ == "__main__":
         print("Skipped - no ANTHROPIC_API_KEY/OPENAI_API_KEY set.")
 
     print("\n=== Exercise 4: stream_to_file (needs API key) ===")
-    if os.getenv("ANTHROPIC_API_KEY"):
+    if has_anthropic_access():
         out_path = Path(__file__).parent / "stream_output.txt"
         stream_to_file("Write one sentence about embeddings.", str(out_path))
         print(f"Streamed to {out_path}")
     else:
-        print("Skipped - no ANTHROPIC_API_KEY set.")
+        print("Skipped - no ANTHROPIC_API_KEY / OPENROUTER_API_KEY set.")

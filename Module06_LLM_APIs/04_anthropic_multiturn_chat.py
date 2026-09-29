@@ -6,13 +6,14 @@
 # NOTE: This is an interactive CLI chat loop that makes REAL, billed API calls.
 # Run it directly (python 04_anthropic_multiturn_chat.py) and type "exit" to quit.
 
-import anthropic
 import os
 from dotenv import load_dotenv
 
+from _openrouter_client import get_anthropic_client, MODEL
+
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"]) if os.getenv("ANTHROPIC_API_KEY") else None
+client = get_anthropic_client()
 
 
 def chat(system: str) -> None:
@@ -25,7 +26,7 @@ def chat(system: str) -> None:
         history.append({"role": "user", "content": user_input})
 
         response = client.messages.create(
-            model="claude-sonnet-4-5",
+            model=MODEL,
             max_tokens=1024,
             system=system,
             messages=history,
@@ -38,6 +39,6 @@ def chat(system: str) -> None:
 
 if __name__ == "__main__":
     if client is None:
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         chat(system="You are a helpful Python tutor.")

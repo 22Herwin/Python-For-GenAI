@@ -19,17 +19,17 @@
 # NOTE: embed() below makes a REAL, billed API call to OpenAI. It requires a
 # valid OPENAI_API_KEY in a .env file in this folder to run.
 
-from openai import OpenAI
-import os
 import numpy as np
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, has_openai_access, EMBEDDING_MODEL
 
 load_dotenv()
 
 
-def embed(texts: list[str], model: str = "text-embedding-3-small") -> np.ndarray:
+def embed(texts: list[str], model: str = EMBEDDING_MODEL) -> np.ndarray:
     """Embed a list of texts. Returns array of shape (n, dim)."""
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = get_openai_client()
     # API accepts up to 2048 texts per call
     response = client.embeddings.create(input=texts, model=model)
     # Sort by index to guarantee order matches input
@@ -47,8 +47,8 @@ TEXTS = [
 
 
 if __name__ == "__main__":
-    if not os.getenv("OPENAI_API_KEY"):
-        print("OPENAI_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_openai_access():
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         embeddings = embed(TEXTS)
         print(f"Shape: {embeddings.shape}")   # (5, 1536)

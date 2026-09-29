@@ -7,10 +7,11 @@
 # NOTE: This script makes REAL, billed API calls to Anthropic. It requires a
 # valid ANTHROPIC_API_KEY in a .env file in this folder to run.
 
-import anthropic
 import os
 import re
 from dotenv import load_dotenv
+
+from _openrouter_client import get_anthropic_client, has_anthropic_access, MODEL
 
 load_dotenv()
 
@@ -55,11 +56,11 @@ STRUCTURED_QUESTION = (
 
 
 def compare_direct_vs_cot() -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
 
     for label, prompt in [("Direct", DIRECT_PROMPT), ("CoT", COT_PROMPT), ("Zero-shot CoT", ZERO_SHOT_COT)]:
         resp = client.messages.create(
-            model="claude-sonnet-4-5",
+            model=MODEL,
             max_tokens=512,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -69,10 +70,10 @@ def compare_direct_vs_cot() -> None:
 
 
 def structured_cot_demo() -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
 
     resp = client.messages.create(
-        model="claude-sonnet-4-5",
+        model=MODEL,
         max_tokens=512,
         system=STRUCTURED_SYSTEM,
         messages=[{"role": "user", "content": STRUCTURED_QUESTION}],
@@ -89,8 +90,8 @@ def structured_cot_demo() -> None:
 
 
 if __name__ == "__main__":
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_anthropic_access():
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         compare_direct_vs_cot()
         print("=" * 40)

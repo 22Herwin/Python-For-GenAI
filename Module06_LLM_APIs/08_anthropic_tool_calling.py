@@ -7,10 +7,10 @@
 # NOTE: This script makes REAL, billed API calls to Anthropic (two calls per
 # run). It requires a valid ANTHROPIC_API_KEY in a .env file in this folder.
 
-import anthropic
-import os
 import json
 from dotenv import load_dotenv
+
+from _openrouter_client import get_anthropic_client, has_anthropic_access, MODEL
 
 load_dotenv()
 
@@ -44,11 +44,11 @@ def get_model_info(model_name: str) -> dict:
 
 
 def run_tool_call_demo() -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
 
     # 3. First API call - model may return a tool_use block
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model=MODEL,
         max_tokens=1024,
         tools=TOOLS,
         messages=[
@@ -70,7 +70,7 @@ def run_tool_call_demo() -> None:
 
         # 6. Send tool result back to the model
         final = client.messages.create(
-            model="claude-sonnet-4-5",
+            model=MODEL,
             max_tokens=1024,
             tools=TOOLS,
             messages=[
@@ -94,7 +94,7 @@ def run_tool_call_demo() -> None:
 
 
 if __name__ == "__main__":
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_anthropic_access():
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         run_tool_call_demo()

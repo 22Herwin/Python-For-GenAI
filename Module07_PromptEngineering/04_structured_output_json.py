@@ -8,11 +8,13 @@
 # file in this folder to run.
 
 import json
-import os
 
-import anthropic
-from openai import OpenAI
 from dotenv import load_dotenv
+
+from _openrouter_client import (
+    get_anthropic_client, has_anthropic_access, MODEL,
+    get_openai_client, has_openai_access, OPENAI_MODEL,
+)
 
 load_dotenv()
 
@@ -40,9 +42,9 @@ COMPANY_TEXTS = [
 
 
 def extract_company_info(text: str) -> dict:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
     resp = client.messages.create(
-        model="claude-sonnet-4-5",
+        model=MODEL,
         max_tokens=256,
         system=ANTHROPIC_SYSTEM,
         messages=[{"role": "user", "content": text}],
@@ -63,10 +65,10 @@ def run_anthropic_demo() -> None:
 # ── Approach 2: OpenAI JSON mode (response_format enforces valid JSON) ───────
 
 def run_openai_json_mode_demo() -> None:
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = get_openai_client()
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model=OPENAI_MODEL,
         response_format={"type": "json_object"},   # enforces valid JSON
         messages=[
             {
@@ -87,14 +89,14 @@ def run_openai_json_mode_demo() -> None:
 
 
 if __name__ == "__main__":
-    if os.getenv("ANTHROPIC_API_KEY"):
+    if has_anthropic_access():
         print("=== Approach 1: Anthropic prompt-enforced JSON ===")
         run_anthropic_demo()
     else:
-        print("Skipping Anthropic demo - ANTHROPIC_API_KEY not set.")
+        print("Skipping Anthropic demo - no ANTHROPIC_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY.")
 
-    if os.getenv("OPENAI_API_KEY"):
+    if has_openai_access():
         print("=== Approach 2: OpenAI json_object mode ===")
         run_openai_json_mode_demo()
     else:
-        print("Skipping OpenAI demo - OPENAI_API_KEY not set.")
+        print("Skipping OpenAI demo - no OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY.")

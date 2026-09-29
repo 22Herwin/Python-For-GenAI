@@ -8,7 +8,6 @@
 # real embed_fn (OpenAI's text-embedding-3-small) when you have an API key.
 
 import hashlib
-import os
 import re
 import sqlite3
 from pathlib import Path
@@ -16,6 +15,8 @@ from typing import Callable
 
 import numpy as np
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, EMBEDDING_MODEL
 
 load_dotenv()
 
@@ -36,10 +37,9 @@ def mock_embed(texts: list[str], dim: int = 16) -> np.ndarray:
     return np.array(vectors, dtype=np.float32)
 
 
-def real_openai_embed(texts: list[str], model: str = "text-embedding-3-small") -> np.ndarray:
-    """The real embedder from section 8.2 - needs OPENAI_API_KEY."""
-    from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+def real_openai_embed(texts: list[str], model: str = EMBEDDING_MODEL) -> np.ndarray:
+    """The real embedder from section 8.2 - needs OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY."""
+    client = get_openai_client()
     resp = client.embeddings.create(input=texts, model=model)
     vectors = sorted(resp.data, key=lambda e: e.index)
     return np.array([v.embedding for v in vectors], dtype=np.float32)

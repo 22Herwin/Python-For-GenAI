@@ -9,10 +9,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import anthropic
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
+
+from _openrouter_client import get_anthropic_client, get_openai_client, has_anthropic_access, MODEL, OPENAI_MODEL
 
 load_dotenv()
 
@@ -43,9 +43,9 @@ class BaseLLMClient(ABC):
 
 
 class AnthropicClient(BaseLLMClient):
-    def __init__(self, model: str = "claude-sonnet-4-5"):
+    def __init__(self, model: str = MODEL):
         self.model = model
-        self._client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        self._client = get_anthropic_client()
 
     def chat(self, messages, system="", max_tokens=1024, temperature=0.7) -> ChatResponse:
         resp = self._client.messages.create(
@@ -63,9 +63,9 @@ class AnthropicClient(BaseLLMClient):
 
 
 class OpenAIClient(BaseLLMClient):
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = OPENAI_MODEL):
         self.model = model
-        self._client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self._client = get_openai_client()
 
     def chat(self, messages, system="", max_tokens=1024, temperature=0.7) -> ChatResponse:
         api_messages = []
@@ -89,8 +89,8 @@ class OpenAIClient(BaseLLMClient):
 
 if __name__ == "__main__":
     # Same code, different backend - swap the class, nothing else changes.
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Add it to a .env file in this folder.")
+    if not has_anthropic_access():
+        print("ANTHROPIC_API_KEY / OPENROUTER_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         client: BaseLLMClient = AnthropicClient()
         msgs = [ChatMessage(role="user", content="What is a vector database?")]

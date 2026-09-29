@@ -10,13 +10,13 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
-from openai import OpenAI
-import os
 from dotenv import load_dotenv
+
+from _openrouter_client import get_openai_client, EMBEDDING_MODEL
 
 load_dotenv()
 
-openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"]) if os.getenv("OPENAI_API_KEY") else None
+openai_client = get_openai_client()
 
 
 # ── Data structures ────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ class SearchResult:
 
 # ── Embedding helper ───────────────────────────────────────────────────────────
 
-def embed_batch(texts: list[str], model: str = "text-embedding-3-small") -> np.ndarray:
+def embed_batch(texts: list[str], model: str = EMBEDDING_MODEL) -> np.ndarray:
     """Embed texts in a single API call. Returns (n, dim) float32 array."""
     response = openai_client.embeddings.create(input=texts, model=model)
     vectors = sorted(response.data, key=lambda e: e.index)
@@ -54,7 +54,7 @@ class VectorStore:
     For larger collections use ChromaDB, Pinecone, or pgvector (Phase 3).
     """
 
-    def __init__(self, embed_model: str = "text-embedding-3-small"):
+    def __init__(self, embed_model: str = EMBEDDING_MODEL):
         self.embed_model = embed_model
         self._documents: list[Document] = []
         self._matrix: Optional[np.ndarray] = None   # (n, dim) normalised
@@ -134,7 +134,7 @@ QUERIES = [
 
 if __name__ == "__main__":
     if openai_client is None:
-        print("OPENAI_API_KEY is not set. Add it to a .env file in this folder.")
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. Add one to a .env file in this folder.")
     else:
         store = VectorStore()
         store.add_documents(CORPUS)

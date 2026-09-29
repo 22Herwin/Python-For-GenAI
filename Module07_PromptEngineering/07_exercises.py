@@ -6,15 +6,15 @@
 # model - the code is complete and correct, just gated behind a key check.
 
 import json
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from string import Formatter
 from typing import Any, Optional
 
-import anthropic
 from dotenv import load_dotenv
+
+from _openrouter_client import get_anthropic_client, has_anthropic_access, MODEL
 
 load_dotenv()
 
@@ -86,7 +86,7 @@ CODE_SNIPPETS = [
 
 
 def compare_review_prompts() -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
     prompts = {
         "basic": CODE_REVIEW_BASIC,
         "intermediate": CODE_REVIEW_INTERMEDIATE,
@@ -96,7 +96,7 @@ def compare_review_prompts() -> None:
         print(f"\n=== {label} ===")
         for snippet in CODE_SNIPPETS[:1]:   # demo with 1 snippet to limit API cost
             resp = client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=300,
                 system=system,
                 messages=[{"role": "user", "content": snippet}],
@@ -160,7 +160,7 @@ class PromptLibrary:
 # tries json.loads, then strips markdown fences, then asks the model to fix
 # the JSON if it is still invalid.
 
-def safe_json_parse(text: str, client=None, model: str = "claude-sonnet-4-5") -> dict:
+def safe_json_parse(text: str, client=None, model: str = MODEL) -> dict:
     """Tier 1: direct parse. Tier 2: strip markdown fences. Tier 3 (needs a
     client): ask the model to repair the JSON."""
     # Tier 1
@@ -230,10 +230,10 @@ cheap-model: qa=65, summarise=70, code=68""",
 
 
 def run_ranking_cot_demo() -> None:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = get_anthropic_client()
     for i, scores_text in enumerate(RANKING_TEST_INPUTS, 1):
         resp = client.messages.create(
-            model="claude-sonnet-4-5",
+            model=MODEL,
             max_tokens=512,
             system=RANKING_COT_SYSTEM,
             messages=[{"role": "user", "content": scores_text}],
@@ -246,7 +246,7 @@ def run_ranking_cot_demo() -> None:
 
 
 if __name__ == "__main__":
-    has_key = bool(os.getenv("ANTHROPIC_API_KEY"))
+    has_key = has_anthropic_access()
 
     print("=== Exercise 1: compare_review_prompts (needs API key) ===")
     if has_key:
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     print(safe_json_parse('{"a": 1}'))                          # tier 1
     print(safe_json_parse('```json\n{"a": 1}\n```'))            # tier 2
     if has_key:
-        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        client = get_anthropic_client()
         print(safe_json_parse('{"a": 1,}', client=client))      # tier 3 (trailing comma)
     else:
         print("Tier 3 (model repair) skipped - ANTHROPIC_API_KEY not set.")
