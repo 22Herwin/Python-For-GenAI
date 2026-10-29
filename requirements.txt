@@ -19,3 +19,47 @@ openai==3.19.0           # Module 06, 07, 08 - OpenAI API (chat, tools, embeddin
 # Optional - only needed if you use Voyage AI embeddings instead of OpenAI's
 # (mentioned as an alternative in Module 08, not required to run any file):
 # voyageai
+
+# ── Phase 3 - GenAI Libraries (Module 09-14) ─────────────────────────────────
+# NOT version-pinned / NOT yet run against the real libraries: these were
+# installed nowhere when the code was written (every file was only syntax-checked
+# with py_compile). The lower bounds below are the versions named in the guide's
+# Phase 3 header. These packages are large (torch alone is several GB); install
+# only what you need, e.g. just Module 09's block.
+#
+#   pip install -r requirements.txt
+#
+# Every Phase 3 script prints a clear "package not installed" message and exits
+# cleanly if its library is missing, so you can install module by module.
+
+# Module 09 - LangChain (also used by Module 13, 14)
+langchain>=1.2
+langchain-core
+langchain-openai
+langchain-anthropic
+langchain-community
+langchain-text-splitters
+# langchain-chroma       # optional - alternative to langchain-community's Chroma (Module 09)
+
+# Module 10 - LlamaIndex
+llama-index>=0.14
+# llama-index-llms-openai-like         # optional - only for OpenRouter/OmniRoute gateways
+# llama-index-embeddings-openai-like   # optional - only for OpenRouter/OmniRoute gateways
+
+# Module 09, 11 - vector databases
+chromadb>=1.1
+pinecone                 # Module 11 - needs PINECONE_API_KEY
+weaviate-client          # Module 11 - needs a running Weaviate server
+
+# Module 12 - Hugging Face
+transformers>=5.6
+torch
+peft
+datasets
+accelerate
+
+# Module 13 - LangGraph
+langgraph
+
+# Module 14 - CrewAI
+crewai>=1.14
