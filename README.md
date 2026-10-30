@@ -8,7 +8,15 @@ Repository ini berisi jawaban tugas **Workshop Python Gen-AI**: kode latihan Pyt
 
 Setiap module sudah dikerjakan lengkap - kode contoh materi + soal latihan (exercises) beserta solusinya - dan sudah diuji jalan tanpa error.
 
-Selain itu, repository ini juga menyertakan pengerjaan **Phase 2 - LLM APIs & Prompting (Module 06-08)** sebagai pengembangan lanjutan: Module 06 (Anthropic & OpenAI API), Module 07 (Prompt Engineering), dan Module 08 (Embeddings & Semantic Search).
+Struktur folder mengikuti pembagian phase di buku:
+
+| Phase | Folder | Isi |
+|---|---|---|
+| Phase 1 - Python Core for AI | `Phase01_Python_Core_for_AI/` | Module 01-05 |
+| Phase 2 - LLM APIs & Prompting | `Phase02_LLM_APIs_Prompting/` | Module 06-08 |
+| Phase 3 - GenAI Libraries | `Phase03_GenAI_Libraries/` | Module 09-14 |
+
+Selain Phase 1, repository ini juga menyertakan pengerjaan **Phase 2 - LLM APIs & Prompting (Module 06-08)** di folder `Phase02_LLM_APIs_Prompting/` sebagai pengembangan lanjutan: Module 06 (Anthropic & OpenAI API), Module 07 (Prompt Engineering), dan Module 08 (Embeddings & Semantic Search).
 
 **Phase 3 - GenAI Libraries (Module 09-14)** juga sudah ditulis, semuanya ada di folder `Phase03_GenAI_Libraries/`: Module 09 (LangChain), Module 10 (LlamaIndex), Module 11 (Vector Databases: ChromaDB, Pinecone, Weaviate), Module 12 (Hugging Face Transformers), Module 13 (LangGraph & Agents), dan Module 14 (CrewAI). Strukturnya sama dengan modul sebelumnya: satu file per sub-bab, plus `NN_exercises.py` berisi solusi soal latihan.
 
@@ -35,8 +43,8 @@ pip install -r requirements.txt
 ## Menjalankan Kode
 
 ```bash
-python Module01_PythonFoundations/01_variables_and_types.py
-python Module05_PythonForData/05_mini_project_eval_pipeline.py
+python Phase01_Python_Core_for_AI/Module01_PythonFoundations/01_variables_and_types.py
+python Phase01_Python_Core_for_AI/Module05_PythonForData/05_mini_project_eval_pipeline.py
 ```
 
 Contoh Phase 3 (setelah install library modul terkait):
@@ -52,5 +60,5 @@ python Phase03_GenAI_Libraries/Module12_HuggingFace/05_peft_lora_finetuning.py -
 Beberapa contoh di Module 04 membaca API key dari `.env`. Copy template-nya lalu isi key sendiri:
 
 ```bash
-cp Module04_FileIO_APIs/.env.example Module04_FileIO_APIs/.env
+cp Phase01_Python_Core_for_AI/Module04_FileIO_APIs/.env.example Phase01_Python_Core_for_AI/Module04_FileIO_APIs/.env
 ```

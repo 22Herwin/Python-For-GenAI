@@ -15,14 +15,14 @@ __pycache__/
 # Generated output from running the demo/exercise scripts.
 # These are fully reproducible by re-running the corresponding .py file,
 # so they don't need to live in version control.
-Module04_FileIO_APIs/data/
-Module05_PythonForData/benchmark_scores.csv
-Module05_PythonForData/eval_results.csv
-Module05_PythonForData/sample_texts/
-Module06_LLM_APIs/data/
-Module06_LLM_APIs/stream_output.txt
-Module07_PromptEngineering/data/
-Module08_Embeddings_SemanticSearch/data/
+Phase01_Python_Core_for_AI/Module04_FileIO_APIs/data/
+Phase01_Python_Core_for_AI/Module05_PythonForData/benchmark_scores.csv
+Phase01_Python_Core_for_AI/Module05_PythonForData/eval_results.csv
+Phase01_Python_Core_for_AI/Module05_PythonForData/sample_texts/
+Phase02_LLM_APIs_Prompting/Module06_LLM_APIs/data/
+Phase02_LLM_APIs_Prompting/Module06_LLM_APIs/stream_output.txt
+Phase02_LLM_APIs_Prompting/Module07_PromptEngineering/data/
+Phase02_LLM_APIs_Prompting/Module08_Embeddings_SemanticSearch/data/
 Phase03_GenAI_Libraries/Module10_LlamaIndex/data/
 Phase03_GenAI_Libraries/Module11_VectorDatabases/data/
 Phase03_GenAI_Libraries/Module12_HuggingFace/data/
@@ -32,3 +32,6 @@ Phase03_GenAI_Libraries/Module12_HuggingFace/data/
 Thumbs.db
 .vscode/
 .idea/
+
+# Book refernce
+*.pdf
