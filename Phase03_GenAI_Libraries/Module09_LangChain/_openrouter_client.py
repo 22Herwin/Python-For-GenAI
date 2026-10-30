@@ -40,6 +40,17 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_OPENAI_MODEL = os.getenv("OPENROUTER_OPENAI_MODEL", "openai/gpt-4o")
 OPENROUTER_CLAUDE_MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
 OPENROUTER_EMBEDDING_MODEL = os.getenv("OPENROUTER_EMBEDDING_MODEL", "text-embedding-3-small")
+# Backup for get_chat_model("auto") on OpenRouter: when the primary model errors
+# (429, 5xx) or returns something the chain cannot parse (e.g. prose instead of
+# JSON for with_structured_output), the same call is retried on this model.
+# Set OPENROUTER_FALLBACK_MODEL= (empty) in .env to disable.
+OPENROUTER_FALLBACK_MODEL = os.getenv("OPENROUTER_FALLBACK_MODEL", "nvidia/nemotron-3.5-super-vl:free")
+# Last resort when every OpenRouter free model is exhausted (daily quota): Gemini
+# through Google's OpenAI-compatible endpoint. Only used when GEMINI_API_KEY is set,
+# and only as a backup behind OpenRouter (chat via "auto", and embeddings).
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
 
 # Model ids used with a real provider key (same ones the guide uses).
 OPENAI_MODEL = "gpt-4o"
@@ -129,7 +140,7 @@ def get_chat_model(
     *,
     model: str | None = None,
     temperature: float = 0.7,
-    max_tokens: int = 1024,
+    max_tokens: int = 4096,
 ) -> Any | None:
     """Build a LangChain chat model, or return None when no key is configured.
 
@@ -156,14 +167,39 @@ def get_chat_model(
     assert route is not None   # chat_backend() already confirmed a route exists
     api_key, base_url, default_model = route
     extra: dict[str, Any] = {"timeout": 120.0, "max_retries": 0} if _USE_OMNIROUTE else {}
-    return ChatOpenAI(
-        model=model or default_model,
+    chosen = model or default_model
+    primary = ChatOpenAI(
+        model=chosen,
         temperature=temperature,
         max_tokens=max_tokens,
         api_key=api_key,
         base_url=base_url,
         **extra,
     )
+
+    # Only "auto" on OpenRouter gets backups; explicit "openai"/"anthropic"
+    # callers keep a plain ChatOpenAI so the two models stay comparable.
+    if provider == "auto" and base_url == OPENROUTER_BASE_URL:
+        backups = []
+        if OPENROUTER_FALLBACK_MODEL and chosen != OPENROUTER_FALLBACK_MODEL:
+            backups.append(ChatOpenAI(
+                model=OPENROUTER_FALLBACK_MODEL,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                api_key=api_key,
+                base_url=base_url,
+            ))
+        if os.getenv("GEMINI_API_KEY"):
+            backups.append(ChatOpenAI(
+                model=GEMINI_MODEL,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                api_key=os.environ["GEMINI_API_KEY"],
+                base_url=GEMINI_BASE_URL,
+            ))
+        if backups:
+            return primary.with_fallbacks(backups)
+    return primary
 
 
 def get_embeddings() -> Any | None:
@@ -179,8 +215,40 @@ def get_embeddings() -> Any | None:
         return OpenAIEmbeddings(model=model, api_key=api_key)
     # Gateways expect plain text input; the default client-side tokenisation sends
     # token ids, which non-OpenAI backends reject.
-    return OpenAIEmbeddings(model=model, api_key=api_key, base_url=base_url,
-                            check_embedding_ctx_length=False)
+    primary = OpenAIEmbeddings(model=model, api_key=api_key, base_url=base_url,
+                               check_embedding_ctx_length=False)
+    if base_url != OPENROUTER_BASE_URL or not os.getenv("GEMINI_API_KEY"):
+        return primary
+
+    from langchain_core.embeddings import Embeddings
+
+    backup = OpenAIEmbeddings(model=GEMINI_EMBEDDING_MODEL, api_key=os.environ["GEMINI_API_KEY"],
+                              base_url=GEMINI_BASE_URL, check_embedding_ctx_length=False)
+
+    class FallbackEmbeddings(Embeddings):
+        """OpenRouter first; after its first failure (e.g. daily free quota) switch to
+        Gemini for the rest of the run, so vectors from two models are not mixed."""
+
+        def __init__(self) -> None:
+            self._use_backup = False
+
+        def _call(self, method: str, arg: Any) -> Any:
+            if not self._use_backup:
+                try:
+                    return getattr(primary, method)(arg)
+                except Exception as exc:
+                    self._use_backup = True
+                    print(f"[embeddings] OpenRouter failed ({type(exc).__name__}); "
+                          f"switching to Gemini {GEMINI_EMBEDDING_MODEL}", file=sys.stderr)
+            return getattr(backup, method)(arg)
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return self._call("embed_documents", texts)
+
+        def embed_query(self, text: str) -> list[float]:
+            return self._call("embed_query", text)
+
+    return FallbackEmbeddings()
 
 
 # ── Readiness checks (graceful failure instead of a traceback) ─────────────────

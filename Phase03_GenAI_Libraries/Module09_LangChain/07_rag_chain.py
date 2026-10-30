@@ -101,7 +101,7 @@ QUESTIONS = [
 
 if __name__ == "__main__":
     embeddings = get_embeddings()                       # text-embedding-3-small
-    llm = get_chat_model("openai", temperature=0.0)     # gpt-4o
+    llm = get_chat_model("auto", temperature=0.0)       # gpt-4o (+ fallback on OpenRouter)
 
     retriever = build_retriever(DOCS, embeddings)
     rag_chain = build_rag_chain(retriever, llm)
