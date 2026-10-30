@@ -401,12 +401,13 @@ def train_qa_adapter(
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(QA_MODEL_NAME)
 
-    # 2. LoRA
+    # 2. LoRA - same r/alpha/dropout as 12.5, but adapting every GPT-2 linear
+    # layer (c_attn alone was too small to memorise 20 answers: 0/20 correct)
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=8,
         lora_alpha=32,
-        target_modules=["c_attn"],
+        target_modules=["c_attn", "c_proj", "c_fc"],
         lora_dropout=0.1,
         bias="none",
     )
@@ -438,7 +439,7 @@ def train_qa_adapter(
         num_train_epochs=40,
         per_device_train_batch_size=4,
         gradient_accumulation_steps=1,
-        learning_rate=3e-4,
+        learning_rate=1e-3,
         fp16=False,
         logging_steps=25,
         save_strategy="no",
