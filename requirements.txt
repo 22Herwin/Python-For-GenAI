@@ -14,7 +14,8 @@ pandas==3.0.5            # Module 05 - DataFrames, groupby, mini project
 httpx==0.28.1            # Module 04 - async HTTP requests
 python-dotenv==1.2.2     # Module 04, 06, 07, 08 - loading API keys from .env
 anthropic==1.8.0         # Module 06, 07, 08 - Claude API (chat, tools, vision, embeddings-adjacent)
-openai==3.19.0           # Module 06, 07, 08 - OpenAI API (chat, tools, embeddings, JSON mode)
+openai==2.54.0           # Module 06, 07, 08 - OpenAI API (chat, tools, embeddings, JSON mode)
+                         # (was 3.19.0 - lowered because langchain-openai, used by Phase 3, requires openai 2.x)
 
 # Optional - only needed if you use Voyage AI embeddings instead of OpenAI's
 # (mentioned as an alternative in Module 08, not required to run any file):
