@@ -77,7 +77,9 @@ def print_task_graph(tasks: list[Task]) -> None:
     """Show each task, who owns it and which earlier tasks feed it."""
     names = {id(task): f"task {i}" for i, task in enumerate(tasks, start=1)}
     for task in tasks:
-        feeds_from = [names[id(t)] for t in (task.context or []) if id(t) in names]
+        # Newer CrewAI uses a NOT_SPECIFIED sentinel (not None) when no context is given.
+        context = task.context if isinstance(task.context, list) else []
+        feeds_from = [names[id(t)] for t in context if id(t) in names]
         summary = task.description.strip().splitlines()[0]
         print(f"- {names[id(task)]} [{task.agent.role}]")
         print(f"    {summary}")

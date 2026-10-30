@@ -7,7 +7,7 @@
 # --real to swap in ChatOpenAI where an exercise has a real path.
 #
 # NOTE: Offline runs need no key and cost nothing. --real makes REAL, billed API
-# calls and needs OPENAI_API_KEY (or OPENROUTER_API_KEY / OMNIROUTE_API_KEY) in
+# calls and needs OPENAI_API_KEY (or OPENROUTER_API_KEY) in
 # a .env file in this folder. Requires langgraph and langchain-core
 # (+ langchain-openai for --real).
 

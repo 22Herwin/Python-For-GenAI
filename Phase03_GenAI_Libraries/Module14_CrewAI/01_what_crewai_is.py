@@ -93,4 +93,4 @@ if __name__ == "__main__":
     print_mental_model()
     version = installed_crewai_version()
     print(f"\ncrewai installed: {version}" if version
-          else "\ncrewai is not installed yet - run: pip install crewai langchain-openai python-dotenv")
+          else "\ncrewai is not installed yet - run: pip install crewai python-dotenv")

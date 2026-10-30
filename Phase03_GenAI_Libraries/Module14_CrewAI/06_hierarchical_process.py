@@ -7,7 +7,7 @@
 # NOTE: crew.kickoff() makes REAL, billed API calls - and the hierarchical
 # process is the most expensive one, because the manager adds its own planning,
 # delegation and review calls on top of the workers' calls. It requires
-# OPENAI_API_KEY (or OPENROUTER_API_KEY / OMNIROUTE_API_KEY / ANTHROPIC_API_KEY)
+# OPENAI_API_KEY (or OPENROUTER_API_KEY / ANTHROPIC_API_KEY)
 # in a .env file in this folder. Without a key this file only builds the crew
 # and prints its structure.
 # NOTE: The book lists the manager in agents=[manager, researcher, writer] AND

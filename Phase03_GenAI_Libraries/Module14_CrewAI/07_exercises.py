@@ -9,7 +9,7 @@
 # NOTE: Exercises 1, 2, 3 and 4 call crew.kickoff(), which makes REAL, billed
 # API calls (several per task; exercise 4 runs two full crews, one of them
 # hierarchical). They need OPENAI_API_KEY (or OPENROUTER_API_KEY /
-# OMNIROUTE_API_KEY / ANTHROPIC_API_KEY) in a .env file in this folder, and only
+# ANTHROPIC_API_KEY) in a .env file in this folder, and only
 # run when you name them on the command line. The offline checks always run:
 # they exercise the WebSearchTool via _run() and build every crew with a
 # placeholder LLM, with no network access.

@@ -6,8 +6,8 @@
 #
 # NOTE: The default demo uses a scripted fake LLM (no key, no cost) so the tool
 # loop can be tested offline. Pass --real to use ChatOpenAI instead - that makes
-# REAL, billed API calls and needs OPENAI_API_KEY (or OPENROUTER_API_KEY /
-# OMNIROUTE_API_KEY) in a .env file in this folder. Requires langgraph,
+# REAL, billed API calls and needs OPENAI_API_KEY (or OPENROUTER_API_KEY)
+# in a .env file in this folder. Requires langgraph,
 # langchain-core and, for --real, langchain-openai.
 
 import json

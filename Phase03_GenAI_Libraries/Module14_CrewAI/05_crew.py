@@ -8,7 +8,7 @@
 #
 # NOTE: crew.kickoff() makes REAL, billed API calls - several LLM calls per task
 # (reasoning steps, tool calls), so a 3-task crew is typically a dozen or more
-# requests. It requires OPENAI_API_KEY (or OPENROUTER_API_KEY / OMNIROUTE_API_KEY /
+# requests. It requires OPENAI_API_KEY (or OPENROUTER_API_KEY /
 # ANTHROPIC_API_KEY) in a .env file in this folder. Without a key this file only
 # builds the crew and prints its structure.
 # NOTE: memory=False keeps cross-task memory (which needs an embeddings provider)
