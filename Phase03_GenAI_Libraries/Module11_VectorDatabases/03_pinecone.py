@@ -6,8 +6,8 @@
 # and filters by metadata.
 #
 # NOTE: Needs the `pinecone` package (pip install pinecone), a valid
-# PINECONE_API_KEY and an embedding key (OPENAI_API_KEY / OPENROUTER_API_KEY /
-# OMNIROUTE_API_KEY) in a .env file in this folder. This script talks to the
+# PINECONE_API_KEY and an embedding key (OPENAI_API_KEY / OPENROUTER_API_KEY)
+# in a .env file in this folder. This script talks to the
 # external Pinecone service: it CREATES a serverless index (cloud aws, region
 # us-east-1) in your Pinecone project if it doesn't exist yet, and makes REAL
 # embedding API calls. The index is never deleted automatically.
@@ -15,7 +15,7 @@
 import os
 import time
 
-from _openrouter_client import EMBEDDING_DIM, has_openai_access, openai_embed
+from _openrouter_client import has_openai_access, openai_embed
 
 try:
     from pinecone import Pinecone, ServerlessSpec
@@ -40,13 +40,24 @@ DOCUMENTS = [
 
 def get_or_create_index(pc: "Pinecone", index_name: str = INDEX_NAME):
     """Create the serverless index if it doesn't exist, then return a handle to it."""
+    # The book hard-codes 1536 (text-embedding-3-small). The size is read from a real
+    # vector instead, because OpenRouter/Gemini models produce other sizes.
+    dimension = len(embed(["dimension probe"])[0])
     if index_name not in pc.list_indexes().names():
         pc.create_index(
             name=index_name,
-            dimension=EMBEDDING_DIM,   # text-embedding-3-small dimension
+            dimension=dimension,
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
+    else:
+        existing = pc.describe_index(index_name).dimension
+        if existing != dimension:
+            raise RuntimeError(
+                f"Index '{index_name}' has dimension {existing} but the embeddings have {dimension}. "
+                "A Pinecone index dimension cannot be changed: delete the index in the Pinecone "
+                "dashboard (Indexes > ai-knowledge-base > Delete) and run this file again."
+            )
     return pc.Index(index_name)
 
 
@@ -111,7 +122,7 @@ if __name__ == "__main__":
     elif not os.getenv("PINECONE_API_KEY"):
         print("PINECONE_API_KEY is not set. Add it to a .env file in this folder (see .env.example).")
     elif not has_openai_access():
-        print("OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is not set. "
+        print("OPENAI_API_KEY / OPENROUTER_API_KEY is not set. "
               "An embedding key is required (the index dimension must match the embedding model).")
     else:
         try:

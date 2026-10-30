@@ -9,7 +9,7 @@
 # running Weaviate instance - this script cannot run without one:
 #   Local: docker run -d -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:latest
 #   Cloud: set WEAVIATE_URL and WEAVIATE_API_KEY in a .env file in this folder.
-# Embeddings use OPENAI_API_KEY (or OPENROUTER_API_KEY / OMNIROUTE_API_KEY) -
+# Embeddings use OPENAI_API_KEY (or OPENROUTER_API_KEY) -
 # REAL, billed API calls; with no key set, an offline mock embedder is used
 # (results are then not semantic).
 #

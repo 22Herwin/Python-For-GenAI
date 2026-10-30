@@ -6,7 +6,7 @@
 # metadata filtering, updating and deleting.
 #
 # NOTE: Needs the `chromadb` package (pip install chromadb). Embeddings use
-# OPENAI_API_KEY (or OPENROUTER_API_KEY / OMNIROUTE_API_KEY) in a .env file in
+# OPENAI_API_KEY (or OPENROUTER_API_KEY) in a .env file in
 # this folder - REAL, billed API calls. With no key set, the demo falls back to
 # an offline mock embedder, so it still runs (results are then not semantic).
 # Data is persisted to ./data/chroma_db_<openai|mock>/ in this folder.

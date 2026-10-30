@@ -1,16 +1,15 @@
 # Module 11 - Vector Databases
 # Shared embedding helpers - lets every 0X_*.py file in this folder embed text
-# against a real OPENAI_API_KEY, or through OPENROUTER_API_KEY / a local
-# OMNIROUTE_API_KEY gateway instead, with no other code changes needed. When no
-# key is set at all, get_embed_fn() falls back to a deterministic offline
+# against a real OPENAI_API_KEY, or through OPENROUTER_API_KEY instead, with no
+# other code changes needed. If GEMINI_API_KEY is also set it backs up
+# OpenRouter: when OpenRouter fails (e.g. its free daily quota is used up) the
+# call is retried on Gemini and stays there for the rest of the run. When no key
+# is set at all, get_embed_fn() falls back to a deterministic offline
 # mock_embed() so the ChromaDB demos and exercises still run.
 #
-# NOTE: OmniRoute's local gateway only proxies embeddings if an "openai"
-# provider has been configured with real credentials in its own dashboard
-# (http://127.0.0.1:20128) - OMNIROUTE_API_KEY alone is not enough for this
-# endpoint. If that's not set up, embed calls will fail with a clear
-# "No credentials for embedding provider" error from OmniRoute itself; set
-# OPENROUTER_API_KEY instead in that case.
+# NOTE: Gemini vectors have 3072 dimensions, not the 1536 of text-embedding-3-small
+# (EMBEDDING_DIM below), so the Pinecone index in 03_pinecone.py only matches when
+# the OpenAI model is the one answering.
 
 import hashlib
 import os
@@ -26,16 +25,15 @@ load_dotenv(Path(__file__).with_name(".env"))
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-OMNIROUTE_BASE_URL = os.getenv("OMNIROUTE_BASE_URL", "http://127.0.0.1:20128/v1").rstrip("/")
-_USE_OMNIROUTE = bool(os.getenv("OMNIROUTE_API_KEY"))
-
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 _USE_OPENROUTER = not os.getenv("OPENAI_API_KEY") and bool(os.getenv("OPENROUTER_API_KEY"))
 
+# Backup behind OpenRouter, used only if GEMINI_API_KEY is set.
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+
 # Model string to pass to client.embeddings.create(model=...).
-if _USE_OMNIROUTE:
-    EMBEDDING_MODEL = os.getenv("OMNIROUTE_EMBEDDING_MODEL", "openai/text-embedding-3-small")
-elif _USE_OPENROUTER:
+if _USE_OPENROUTER:
     EMBEDDING_MODEL = os.getenv("OPENROUTER_EMBEDDING_MODEL", "text-embedding-3-small")
 else:
     EMBEDDING_MODEL = "text-embedding-3-small"
@@ -46,32 +44,59 @@ EmbedFn = Callable[[list[str]], list[list[float]]]
 
 
 def has_openai_access() -> bool:
-    return _USE_OMNIROUTE or bool(os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"))
+    return bool(os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"))
+
+
+def _has_gemini_backup() -> bool:
+    return _USE_OPENROUTER and bool(os.getenv("GEMINI_API_KEY"))
 
 
 def get_openai_client():
-    """Real OpenAI client, or the same SDK pointed at OmniRoute/OpenRouter -
-    both are OpenAI-compatible, so no request/response translation is needed."""
+    """Real OpenAI client, or the same SDK pointed at OpenRouter - both are
+    OpenAI-compatible, so no request/response translation is needed."""
     from openai import OpenAI
 
-    if _USE_OMNIROUTE:
-        return OpenAI(api_key=os.environ["OMNIROUTE_API_KEY"], base_url=OMNIROUTE_BASE_URL,
-                      timeout=120.0, max_retries=0)
     if os.getenv("OPENAI_API_KEY"):
         return OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     if os.getenv("OPENROUTER_API_KEY"):
-        return OpenAI(api_key=os.environ["OPENROUTER_API_KEY"], base_url=OPENROUTER_BASE_URL)
+        # With a Gemini backup, a failure should switch at once instead of retrying.
+        return OpenAI(api_key=os.environ["OPENROUTER_API_KEY"], base_url=OPENROUTER_BASE_URL,
+                      max_retries=0 if _has_gemini_backup() else 2)
     return None
+
+
+_use_gemini_backup = False   # set after OpenRouter fails; stays on for the rest of the run
+
+
+def _vectors(resp) -> list[list[float]]:
+    """Embeddings in input order. Sorted by `index` when the provider sets it
+    (Gemini's OpenAI-compatible endpoint can leave it empty - then the order is already right)."""
+    items = list(resp.data)
+    if all(isinstance(e.index, int) for e in items):
+        items.sort(key=lambda e: e.index)
+    return [e.embedding for e in items]
 
 
 def openai_embed(texts: list[str], model: str = EMBEDDING_MODEL) -> list[list[float]]:
     """The embed() helper used throughout the book - one batched API call.
-    Needs OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY."""
+    Needs OPENAI_API_KEY / OPENROUTER_API_KEY; falls back to Gemini if configured."""
+    global _use_gemini_backup
     client = get_openai_client()
     if client is None:
-        raise RuntimeError("No embedding API key set (OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY).")
-    resp = client.embeddings.create(model=model, input=texts)
-    return [e.embedding for e in sorted(resp.data, key=lambda x: x.index)]
+        raise RuntimeError("No embedding API key set (OPENAI_API_KEY / OPENROUTER_API_KEY).")
+
+    if not _use_gemini_backup:
+        try:
+            return _vectors(client.embeddings.create(model=model, input=texts))
+        except Exception:
+            if not _has_gemini_backup():
+                raise
+            _use_gemini_backup = True   # vectors from two models must not be mixed in one run
+
+    from openai import OpenAI
+
+    gemini = OpenAI(api_key=os.environ["GEMINI_API_KEY"], base_url=GEMINI_BASE_URL)
+    return _vectors(gemini.embeddings.create(model=GEMINI_EMBEDDING_MODEL, input=texts))
 
 
 def mock_embed(texts: list[str], dim: int = 64) -> list[list[float]]:
