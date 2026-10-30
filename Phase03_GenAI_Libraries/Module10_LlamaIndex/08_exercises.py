@@ -6,7 +6,7 @@
 # and an extractive "LLM" - so the core logic (folder Q&A, index comparison, metadata
 # filtering, two-stage re-ranking) can be tested with no API key and no network. The
 # __main__ demo switches to the real models automatically when OPENAI_API_KEY /
-# OPENROUTER_API_KEY / OMNIROUTE_API_KEY is set in a .env file in this folder.
+# OPENROUTER_API_KEY is set in a .env file in this folder.
 #
 # NOTE: needs `pip install llama-index`. In real mode every exercise makes REAL, billed API
 # calls (Exercise 4 makes one chat call per first-stage node, i.e. 10 per question).

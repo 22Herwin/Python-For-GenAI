@@ -1,18 +1,18 @@
 # Module 10 - LlamaIndex
 # Shared model factory - lets every 0X_*.py file in this folder configure
 # LlamaIndex's Settings.llm / Settings.embed_model against a real OPENAI_API_KEY,
-# or through OPENROUTER_API_KEY / a local OMNIROUTE_API_KEY gateway instead,
-# with no other code changes needed in the calling file. If no key is set at all,
-# an offline LLM + embedding model (deterministic, no network) can be used so the
-# core logic of every file can still be exercised.
+# or through a single OPENROUTER_API_KEY instead, with no other code changes
+# needed in the calling file. If GEMINI_API_KEY and/or GROQ_API_KEY are also set,
+# they act as backups behind OpenRouter: when it fails (e.g. its free daily quota
+# is used up) the same call is retried on Gemini, then Groq (chat only - Groq has
+# no embeddings). If no key is set at all, an offline LLM + embedding model
+# (deterministic, no network) can be used so the core logic of every file can
+# still be exercised.
 #
 # NOTE: needs `pip install llama-index` (core + OpenAI LLM/embedding integrations).
-# Routing through OpenRouter / OmniRoute additionally needs
+# Routing through OpenRouter / Gemini / Groq additionally needs
 # `pip install llama-index-llms-openai-like llama-index-embeddings-openai-like`,
 # because the plain OpenAI classes reject non-OpenAI model names.
-# OmniRoute's local gateway only proxies embeddings if an "openai" provider has
-# been configured with real credentials in its own dashboard
-# (http://127.0.0.1:20128); OPENROUTER_API_KEY is the confirmed-working option.
 # This module imports llama_index lazily, so it can be imported without it.
 
 import os
@@ -33,18 +33,22 @@ load_dotenv(Path(__file__).with_name(".env"))
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-# An explicitly configured OmniRoute key takes precedence over other providers.
-OMNIROUTE_BASE_URL = os.getenv("OMNIROUTE_BASE_URL", "http://127.0.0.1:20128/v1").rstrip("/")
-_USE_OMNIROUTE = bool(os.getenv("OMNIROUTE_API_KEY"))
-
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 _USE_OPENROUTER = not os.getenv("OPENAI_API_KEY") and bool(os.getenv("OPENROUTER_API_KEY"))
 
+# Backups behind OpenRouter, each used only when the one before it fails and only
+# if its key is set. Groq has no embeddings endpoint, so it backs up chat only.
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+# Backup models may be "reasoning" models that spend part of max_tokens on
+# thinking, so they get at least this budget or the visible answer can come back empty.
+BACKUP_MIN_TOKENS = 4096
+
 # Model strings. A direct OPENAI_API_KEY keeps the book's models unchanged.
-if _USE_OMNIROUTE:
-    LLM_MODEL = os.getenv("OMNIROUTE_MODEL", "cc/claude-sonnet-4-6")
-    EMBEDDING_MODEL = os.getenv("OMNIROUTE_EMBEDDING_MODEL", "openai/text-embedding-3-small")
-elif _USE_OPENROUTER:
+if _USE_OPENROUTER:
     LLM_MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
     EMBEDDING_MODEL = os.getenv("OPENROUTER_EMBEDDING_MODEL", "text-embedding-3-small")
 else:
@@ -57,14 +61,12 @@ GATEWAY_CONTEXT_WINDOW = 128_000
 
 
 def has_llm_access() -> bool:
-    """True when any of OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY is set."""
-    return _USE_OMNIROUTE or bool(os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"))
+    """True when OPENAI_API_KEY or OPENROUTER_API_KEY is set."""
+    return bool(os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"))
 
 
 def _credentials() -> tuple[str, str | None] | None:
     """(api_key, api_base) for the active provider; api_base is None for direct OpenAI."""
-    if _USE_OMNIROUTE:
-        return os.environ["OMNIROUTE_API_KEY"], OMNIROUTE_BASE_URL
     if os.getenv("OPENAI_API_KEY"):
         return os.environ["OPENAI_API_KEY"], None
     if os.getenv("OPENROUTER_API_KEY"):
@@ -96,17 +98,36 @@ def get_llm(temperature: float = 0.1, max_tokens: int = 1024):
         from llama_index.llms.openai_like import OpenAILike
     except ImportError:
         _missing_package("llama-index-llms-openai-like")
-    extra: dict[str, Any] = {"timeout": 120.0, "max_retries": 0} if _USE_OMNIROUTE else {}
-    return OpenAILike(
-        model=LLM_MODEL,
-        api_key=api_key,
-        api_base=api_base,
-        is_chat_model=True,
-        context_window=GATEWAY_CONTEXT_WINDOW,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        **extra,
-    )
+
+    def gateway_llm(model: str, key: str, base: str, tokens: int, retries: int):
+        return OpenAILike(
+            model=model,
+            api_key=key,
+            api_base=base,
+            is_chat_model=True,
+            context_window=GATEWAY_CONTEXT_WINDOW,
+            temperature=temperature,
+            max_tokens=tokens,
+            max_retries=retries,
+        )
+
+    # (model, key, base, tokens) for each backup that has a key, in fallback order.
+    specs = []
+    if os.getenv("GEMINI_API_KEY"):
+        specs.append((GEMINI_MODEL, os.environ["GEMINI_API_KEY"], GEMINI_BASE_URL,
+                      max(max_tokens, BACKUP_MIN_TOKENS)))
+    if os.getenv("GROQ_API_KEY"):
+        specs.append((GROQ_MODEL, os.environ["GROQ_API_KEY"], GROQ_BASE_URL,
+                      max(max_tokens, BACKUP_MIN_TOKENS)))
+    if not specs:
+        return gateway_llm(LLM_MODEL, api_key, api_base, max_tokens, retries=3)
+
+    # Every model except the last has retries off, so a failure (e.g. the daily
+    # quota) moves on to the next model at once instead of retrying and logging.
+    models = [gateway_llm(LLM_MODEL, api_key, api_base, max_tokens, retries=0)]
+    models += [gateway_llm(*spec, retries=0) for spec in specs[:-1]]
+    models.append(gateway_llm(*specs[-1], retries=3))
+    return _fallback_llm(models)
 
 
 def get_embed_model():
@@ -127,7 +148,126 @@ def get_embed_model():
         from llama_index.embeddings.openai_like import OpenAILikeEmbedding
     except ImportError:
         _missing_package("llama-index-embeddings-openai-like")
-    return OpenAILikeEmbedding(model_name=EMBEDDING_MODEL, api_key=api_key, api_base=api_base)
+    if not os.getenv("GEMINI_API_KEY"):
+        return OpenAILikeEmbedding(model_name=EMBEDDING_MODEL, api_key=api_key, api_base=api_base)
+    # Retries off on OpenRouter so a failure switches to Gemini at once, silently.
+    primary = OpenAILikeEmbedding(model_name=EMBEDDING_MODEL, api_key=api_key, api_base=api_base,
+                                  max_retries=0)
+    backup = OpenAILikeEmbedding(model_name=GEMINI_EMBEDDING_MODEL,
+                                 api_key=os.environ["GEMINI_API_KEY"], api_base=GEMINI_BASE_URL)
+    return _fallback_embed_model([primary, backup])
+
+
+# ── Fallback wrappers ────────────────────────────────────────────────────────
+# LlamaIndex has no with_fallbacks(), so these wrap several models behind one.
+
+def _fallback_llm(llms: list[Any]):
+    """One LLM that tries each of `llms` in order until one answers."""
+    from llama_index.core.llms import (
+        ChatResponseGen,
+        CompletionResponseGen,
+        CustomLLM,
+        LLMMetadata,
+    )
+    from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+
+    state = {"llm": llms[0]}   # model that answered last
+
+    def first_ok(call):
+        """Run call(llm) on each model; re-raise the last error if all of them fail."""
+        error: Exception | None = None
+        for llm in llms:
+            try:
+                result = call(llm)
+            except Exception as exc:
+                error = exc
+                continue
+            state["llm"] = llm
+            return result
+        raise error
+
+    def first_ok_stream(call):
+        """Like first_ok for generators; only falls back before the first chunk."""
+        error: Exception | None = None
+        for llm in llms:
+            started = False
+            try:
+                for chunk in call(llm):
+                    if not started:
+                        state["llm"] = llm
+                    started = True
+                    yield chunk
+                return
+            except Exception as exc:
+                if started:
+                    raise
+                error = exc
+        raise error
+
+    class FallbackLLM(CustomLLM):
+        @property
+        def metadata(self) -> LLMMetadata:
+            return state["llm"].metadata
+
+        @property
+        def active_model_name(self) -> str:
+            return state["llm"].metadata.model_name
+
+        @llm_completion_callback()
+        def complete(self, prompt: str, formatted: bool = False, **kwargs: Any):
+            return first_ok(lambda llm: llm.complete(prompt, formatted=formatted, **kwargs))
+
+        @llm_completion_callback()
+        def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+            return first_ok_stream(lambda llm: llm.stream_complete(prompt, formatted=formatted, **kwargs))
+
+        @llm_chat_callback()
+        def chat(self, messages, **kwargs: Any):
+            return first_ok(lambda llm: llm.chat(messages, **kwargs))
+
+        @llm_chat_callback()
+        def stream_chat(self, messages, **kwargs: Any) -> ChatResponseGen:
+            return first_ok_stream(lambda llm: llm.stream_chat(messages, **kwargs))
+
+    return FallbackLLM()
+
+
+def _fallback_embed_model(models: list[Any]):
+    """One embedding model that uses models[0] until it fails, then switches to the
+    next for the rest of the run (vectors from two models must not be mixed)."""
+    from llama_index.core.embeddings import BaseEmbedding
+    from pydantic import PrivateAttr
+
+    class FallbackEmbedding(BaseEmbedding):
+        _active: int = PrivateAttr(default=0)
+
+        @property
+        def active_model_name(self) -> str:
+            return models[self._active].model_name
+
+        def _run(self, method: str, arg: Any) -> Any:
+            while True:
+                try:
+                    return getattr(models[self._active], method)(arg)
+                except Exception:
+                    if self._active >= len(models) - 1:
+                        raise
+                    self._active += 1
+                    self.model_name = models[self._active].model_name
+
+        def _get_query_embedding(self, query: str) -> list[float]:
+            return self._run("get_query_embedding", query)
+
+        async def _aget_query_embedding(self, query: str) -> list[float]:
+            return self._run("get_query_embedding", query)
+
+        def _get_text_embedding(self, text: str) -> list[float]:
+            return self._run("get_text_embedding", text)
+
+        def _get_text_embeddings(self, texts: list[str]) -> list[list[float]]:
+            return self._run("get_text_embedding_batch", texts)
+
+    return FallbackEmbedding(model_name=models[0].model_name)
 
 
 # ── Offline models (no network) ──────────────────────────────────────────────
@@ -290,6 +430,27 @@ def configure_offline_settings(chunk_size: int | None = None, chunk_overlap: int
     _apply_chunking(chunk_size, chunk_overlap)
 
 
+def _active_model_names() -> tuple[str, str]:
+    """Names of the models that actually answer. When backups are configured, one
+    tiny call each finds out which provider is up (a failed probe only affects the
+    printed label - the real calls report their own errors)."""
+    from llama_index.core import Settings
+
+    llm, embed = Settings.llm, Settings.embed_model
+    if hasattr(llm, "active_model_name"):
+        try:
+            llm.complete("Reply with: OK")
+        except Exception:
+            pass
+    if hasattr(embed, "active_model_name"):
+        try:
+            embed.get_text_embedding("ping")
+        except Exception:
+            pass
+    return (getattr(llm, "active_model_name", LLM_MODEL),
+            getattr(embed, "active_model_name", EMBEDDING_MODEL))
+
+
 def configure_settings_or_offline(
     temperature: float = 0.1,
     max_tokens: int = 1024,
@@ -299,11 +460,12 @@ def configure_settings_or_offline(
     """Configure Settings with the real provider if a key exists, otherwise the
     offline models. Returns "real" or "offline" and prints which one is active."""
     if configure_settings(temperature, max_tokens, chunk_size, chunk_overlap):
-        print(f"[real] LLM={LLM_MODEL} | embeddings={EMBEDDING_MODEL}")
+        llm_name, embed_name = _active_model_names()
+        print(f"[real] LLM={llm_name} | embeddings={embed_name}")
         return "real"
     configure_offline_settings(chunk_size, chunk_overlap)
     print(
-        "[offline] No OPENAI_API_KEY / OPENROUTER_API_KEY / OMNIROUTE_API_KEY set - "
+        "[offline] No OPENAI_API_KEY / OPENROUTER_API_KEY set - "
         "using the offline mock LLM + hashing embeddings (answers are extractive, not generated). "
         "Add a key to a .env file in this folder for real model output."
     )

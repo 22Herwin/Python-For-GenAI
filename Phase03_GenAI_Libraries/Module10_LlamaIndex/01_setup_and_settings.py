@@ -5,8 +5,8 @@
 # from nodes: VectorStoreIndex, SummaryIndex, KeywordIndex), Query Engine (question -> retrieve
 # nodes -> synthesise answer), Retriever (the retrieval part, usable on its own).
 #
-# NOTE: needs `pip install llama-index`. With an OPENAI_API_KEY (or OPENROUTER_API_KEY /
-# OMNIROUTE_API_KEY) in a .env file in this folder, Settings points at the real models; with no
+# NOTE: needs `pip install llama-index`. With an OPENAI_API_KEY (or OPENROUTER_API_KEY)
+# in a .env file in this folder, Settings points at the real models; with no
 # key the __main__ demo falls back to the offline mock models. Building the Settings objects
 # makes no API call.
 
@@ -29,7 +29,7 @@ from _openrouter_client import configure_settings_or_offline
 #   Settings.chunk_overlap = 64   # token overlap between chunks
 #
 # configure_settings_or_offline() does exactly that (the same classes and values), but also
-# works through OpenRouter / OmniRoute and falls back to offline mocks when there is no key.
+# works through OpenRouter and falls back to offline mocks when there is no key.
 
 def setup_settings() -> str:
     """Apply the book's global Settings. Returns "real" or "offline"."""
